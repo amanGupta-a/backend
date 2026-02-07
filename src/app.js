@@ -16,4 +16,8 @@ app.use(express.urlencoded({
 app.use(express.text());
 app.use(express.static("public"));
 app.use(cookieParser());
+
+//importing routes, with using middlewares
+import userRoute from "./routes/user.route.js";
+app.use("/api/v1/users", userRoute);
 export {app};

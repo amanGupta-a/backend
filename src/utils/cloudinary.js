@@ -19,16 +19,17 @@ export const uploadToCloudinary=async (filePath)=>{
             resource_type:"auto",
         })
         console.log("Upload successful:", response.url);
-        return response;
+        // return response;
     } catch (error) {
+        fs.unlinkSync(filePath);
         console.error("Error uploading to Cloudinary:", error);
         return null;
     }
-    finally{
-        try {
-            fs.unlinkSync(filePath);
-        } catch (error) {
-            console.error("Error deleting temporary file:", error);
-        }
-    }
+    // finally{
+    //     try {
+    //         fs.unlinkSync(filePath);
+    //     } catch (error) {
+    //         console.error("Error deleting temporary file:", error);
+    //     }
+    // }
 }

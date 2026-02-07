@@ -70,7 +70,7 @@ userSchema.methods.generateRefreshToken=function(){
         _id:this._id,
         username:this.username,
         },
-        process.env.REFRESH_TOKEN_SECRET,b
+        process.env.REFRESH_TOKEN_SECRET,
         {
             expiresIn: process.env.REFRESH_TOKEN_EXPIRY
         }
