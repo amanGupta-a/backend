@@ -13,7 +13,7 @@ app.use(express.urlencoded({
     extended: true,
     limit: "32kb"
 }));
-app.use(express.text());
+// app.use(express.text());
 app.use(express.static("public"));
 app.use(cookieParser());
 
