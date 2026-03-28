@@ -97,6 +97,7 @@ const loginUser=asyncHandler(async (req, res)=>{
         httpOnly:true,
         secure:true,
     }
+    console.log(user)
     return res.status(200)
     .cookie("accessToken", accessToken, options)
     .cookie("refreshToken", refreshToken, options)
@@ -119,8 +120,8 @@ const logoutUser=asyncHandler(async (req, res)=>{
     await User.findByIdAndUpdate(
         req.user._id,
         {
-            $set:{
-                refreshToken:undefined
+            $unset:{
+                refreshToken:1
             }
         },
         {
@@ -216,7 +217,7 @@ const updateAccountDetail=asyncHandler(async(req, res)=>{
     if(!fullName && !email){
         throw new ApiError(401,"Both Field are Required")
     }
-    const user=User.findByIdAndUpdate(
+    const user=await User.findByIdAndUpdate(
         req.user?._id,
         {
         $set:{
@@ -225,6 +226,7 @@ const updateAccountDetail=asyncHandler(async(req, res)=>{
         },
     }, {new:true}
         ).select("-password")
+    console.log(user);
     return res
     .status(200)
     .json(
@@ -240,7 +242,7 @@ const updateAvatar=asyncHandler(async (req, res)=>{
     if(!avatar.url){
         throw new ApiError(400,"Something went wrong while uploading avatar to cloudinary")
     }
-    const user=findByIdAndUpdate(req.user?._id,
+    const user=await User.findByIdAndUpdate(req.user?._id,
         {
             $set:{
                 avatar:avatar.url

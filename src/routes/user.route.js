@@ -26,8 +26,7 @@ router.route("/refresh-token").post(refreshAccessToken);
 //control gets from http://localhost:5000/user/login  
 router.route("/change-password").post(verifyJWT,changeCurrentPassword);
 router.route("/current-user").get(verifyJWT, getCurrentUser);
-router.
-route("/update-account")
+router.route("/update-account")
 .patch(verifyJWT,updateAccountDetail);
 router.
 route("/update-avatar")
