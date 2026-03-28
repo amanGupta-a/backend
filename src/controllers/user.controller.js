@@ -189,7 +189,7 @@ const changeCurrentPassword=asyncHandler(async (req, res)=>{
     }
     const isPasswordCorrect=await user.isCorrectPassword(oldPassword);
     if(!isPasswordCorrect){
-        throw new ApiError(401, "Incorrect Old Password, NOT AUTHORIZED")
+        throw new ApiError(400, "Incorrect Old Password, NOT AUTHORIZED")
     }
     if(!(newPassword===confirmNewPassword)){
         throw new ApiError(400,"New Password and Confirm Password must be same")
@@ -223,14 +223,14 @@ const updateAccountDetail=asyncHandler(async(req, res)=>{
             fullName:fullName,
             email:email,
         },
-    }, {new:true}).select("-password")
-
+    }, {new:true}
+        ).select("-password")
     return res
     .status(200)
     .json(
         new ApiResponse(200, "Account Detail Updated",true, user)
     )
-})
+}) 
 const updateAvatar=asyncHandler(async (req, res)=>{
     const avatarLocalPath=req.file?.path;
     if(!avatarLocalPath){
@@ -249,6 +249,80 @@ const updateAvatar=asyncHandler(async (req, res)=>{
     return res.status(200).json(
         new ApiResponse(200,"Avatar updated",true,user.avatar)
     )
+})
+const getUserProfile=asyncHandler(async(req, res)=>{
+    const {username}=req.params;
+    if(!username){
+        throw new ApiError(400,"Username is required")
+    }
+    //using aggregation pipelining
+    const channel=await User.aggregate([
+        {
+            $match:{
+                username:username.toLowerCase()
+            }
+        },
+        //now i want to know the subscriber of this channel
+        {
+            $lookup:{
+                from:"subscriptions",//foreign collection name
+                localField:"_id",//field from user collection
+                foreignField:"channel",//field from subscription collection
+                as:"subscribers"//alias for the result
+            }
+        },
+        //i want to know whom i have subscribed
+        {
+            $lookup:{
+                from:"subscriptions",
+                localField:"_id",
+                foreignField:"subscriber",
+                as:"subscribedTo"
+            }
+        },
+        {
+            $addFields:{
+                subscriberCount:{
+                    $size:"$subscribers"
+                },
+                subscribedToChannels:{
+                    $size:"$subscribedTo"
+                },
+                isSubscribed:{
+                    $cond:{
+                        if:{$in:[req.user?._id,"$subscribers"]},
+                        then:true,
+                        else:false,
+                    }
+                }
+            }
+        },
+        {
+            //select fullName,... from user
+            $project:{
+                fullName:1,
+                username:1,
+                subscriberCount:1,
+                subscribedToChannels:1,
+                isSubscribed:1,
+                avatar:1,
+                coverImage:1,
+                email:1,
+                createdAt:1,
+            }
+        }
+    ])
+    if(!channel.length){
+        throw new ApiError(400, "Channel Not Found")
+    }
+    console.log(channel);
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200,"user channel fetched successfully", true, channel[0])
+    )
+
+
 })
 const updateCoverImage=asyncHandler(async (req, res)=>{
     const coverImageLocalPath=req.file?.path;
@@ -271,6 +345,8 @@ const updateCoverImage=asyncHandler(async (req, res)=>{
 
 
 
+
+
 export {registerUser, loginUser, logoutUser, refreshAccessToken,changeCurrentPassword, getCurrentUser,updateAccountDetail
-    ,updateAvatar, updateCoverImage
+    ,updateAvatar, updateCoverImage,getUserProfile,
 };
