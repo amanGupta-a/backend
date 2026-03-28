@@ -321,8 +321,6 @@ const getUserProfile=asyncHandler(async(req, res)=>{
     .json(
         new ApiResponse(200,"user channel fetched successfully", true, channel[0])
     )
-
-
 })
 const updateCoverImage=asyncHandler(async (req, res)=>{
     const coverImageLocalPath=req.file?.path;
@@ -344,9 +342,57 @@ const updateCoverImage=asyncHandler(async (req, res)=>{
 })
 
 
-
+const getUserWatchHistory=asyncHandler(async(req, res)=>{
+    const user=await User.aggregate([
+        {
+            $match:{
+                _id:new mongoose.Types.ObjectId(req.user?._id)
+            }
+        },
+        {
+            $lookup:{
+                from:"videos",
+                localField:"watchHistory",
+                foreignField:"_id",
+                as:"watchHistory",
+                //need to have nested loop, so pipeline will be used
+                pipeline:[
+                    {
+                        $lookup:{
+                            from:"user",
+                            localField:"owner",
+                            foreignField:"_id",
+                            as:"owner",
+                            //todo, isko bahar nikalke bhi dekhna hai
+                            //want only some field of owner, not whole
+                            pipeline:[
+                            {
+                                $project:{
+                                    fullName:1,
+                                    username:1,
+                                    avatar:1,
+                                    updatedAt:1,
+                                }
+                            }
+                            ]
+                        }
+                    },
+                    {
+                        $addFields:{
+                            $first:"$owner"
+                        }
+                    }
+                ]
+            }
+        }
+    ])
+    return res.status(200)
+    .json(
+        new ApiResponse(200,"watch history fetched successfully", true, user[0].watchHistory)
+    )
+})
 
 
 export {registerUser, loginUser, logoutUser, refreshAccessToken,changeCurrentPassword, getCurrentUser,updateAccountDetail
-    ,updateAvatar, updateCoverImage,getUserProfile,
+    ,updateAvatar, updateCoverImage,getUserProfile,getUserWatchHistory,
 };
